@@ -1,6 +1,7 @@
-/// A generic CRUD contract, reusable for any entity identified by a
-/// [String] id.
-abstract interface class Repository<T> {
+// Interface générique : T sera remplacé par Task quand on l'utilise.
+// Ça permet de définir les opérations CRUD une seule fois, peu importe
+// le type d'objet stocké.
+abstract class Repository<T> {
   void add(T item);
   List<T> getAll();
   T getById(String id);

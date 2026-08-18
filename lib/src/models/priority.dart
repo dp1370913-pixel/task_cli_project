@@ -12,7 +12,7 @@ Priority priorityFromString(String value) {
       return Priority.high;
     default:
       throw InvalidTaskException(
-        'Unknown priority "$value" (expected low, medium or high)',
+        'Priorité inconnue "$value" (attendu: low, medium ou high)',
       );
   }
 }

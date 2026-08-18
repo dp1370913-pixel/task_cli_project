@@ -1,4 +1,4 @@
-/// Base type for every exception raised by this application.
+// Exception "mère" : toutes les autres en héritent.
 class TaskException implements Exception {
   final String message;
 
@@ -8,17 +8,17 @@ class TaskException implements Exception {
   String toString() => message;
 }
 
-/// Raised when a task fails validation (empty title, bad priority, ...).
+// Levée quand une tâche est invalide (titre vide, priorité inconnue, etc).
 class InvalidTaskException extends TaskException {
   InvalidTaskException(super.message);
 }
 
-/// Raised when looking up, updating or deleting a task that doesn't exist.
+// Levée quand on cherche une tâche avec un id qui n'existe pas.
 class TaskNotFoundException extends TaskException {
-  TaskNotFoundException(String id) : super('Task not found: $id');
+  TaskNotFoundException(String id) : super('Tâche introuvable: $id');
 }
 
-/// Raised when the JSON storage file can't be read or written.
+// Levée si le fichier tasks.json ne peut pas être lu ou écrit.
 class StorageException extends TaskException {
   StorageException(super.message);
 }

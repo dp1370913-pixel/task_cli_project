@@ -5,7 +5,8 @@ import '../exceptions/task_exceptions.dart';
 import '../models/task.dart';
 import 'repository.dart';
 
-/// [Repository] implementation that persists [Task]s to a local JSON file.
+// Implémentation de Repository<Task> qui sauvegarde les tâches
+// dans un fichier JSON local.
 class TaskRepository implements Repository<Task> {
   final File _file;
   List<Task> _tasks = [];
@@ -19,18 +20,20 @@ class TaskRepository implements Repository<Task> {
       _tasks = [];
       return;
     }
+
     final content = _file.readAsStringSync();
     if (content.trim().isEmpty) {
       _tasks = [];
       return;
     }
+
     try {
       final decoded = jsonDecode(content) as List<dynamic>;
       _tasks = decoded
           .map((e) => Task.fromJson(e as Map<String, dynamic>))
           .toList();
-    } on FormatException catch (e) {
-      throw StorageException('Corrupted task file: ${e.message}');
+    } catch (e) {
+      throw StorageException('Fichier tasks.json corrompu: $e');
     }
   }
 
@@ -41,8 +44,8 @@ class TaskRepository implements Repository<Task> {
         _file.parent.createSync(recursive: true);
       }
       _file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(data));
-    } on FileSystemException catch (e) {
-      throw StorageException('Could not write task file: ${e.message}');
+    } catch (e) {
+      throw StorageException('Impossible d\'écrire dans tasks.json: $e');
     }
   }
 
@@ -53,7 +56,7 @@ class TaskRepository implements Repository<Task> {
   }
 
   @override
-  List<Task> getAll() => List.unmodifiable(_tasks);
+  List<Task> getAll() => List<Task>.from(_tasks);
 
   @override
   Task getById(String id) {

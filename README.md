@@ -1,68 +1,54 @@
 # task_cli
 
-A command-line task manager written in pure Dart (no Flutter).
+Petite appli en ligne de commande pour gérer une liste de tâches, faite en Dart pur (pas de Flutter).
 
-## Features
+## Ce que ça fait
 
-- Add a task with a title, a priority (`low` / `medium` / `high`) and an optional due date
-- List all tasks, sorted by priority or by due date
-- Mark a task as completed
-- Delete a task
-- Data is persisted locally in a `tasks.json` file
+- Ajouter une tâche (titre, priorité low/medium/high, date limite optionnelle)
+- Lister les tâches, avec un tri par priorité ou par date
+- Marquer une tâche comme terminée
+- Supprimer une tâche
+- Les tâches sont sauvegardées dans un fichier `tasks.json`
 
-## Architecture
+## Comment c'est organisé
 
-- `lib/src/models/` — `Task` is an abstract base class implementing the
-  `JsonSerializable` and `Comparable<Task>` interfaces. `StandardTask` and
-  `UrgentTask` (always high priority, requires an escalation reason) extend
-  it.
-- `lib/src/exceptions/` — custom exceptions (`InvalidTaskException`,
-  `TaskNotFoundException`, `StorageException`), all implementing `Exception`.
-- `lib/src/repository/` — `Repository<T>` is a generic CRUD interface;
-  `TaskRepository` implements it for `Task`, backed by a local JSON file.
-- `lib/src/cli/` — `CliRunner` parses arguments and dispatches commands.
+- `lib/src/models/` : `Task` est une classe abstraite (elle implémente les interfaces `JsonSerializable` et `Comparable<Task>`). `StandardTask` et `UrgentTask` en héritent — une `UrgentTask` est toujours en priorité `high` et doit avoir une raison.
+- `lib/src/exceptions/` : mes exceptions perso (`InvalidTaskException`, `TaskNotFoundException`, `StorageException`).
+- `lib/src/repository/` : `Repository<T>` est une interface générique (CRUD), et `TaskRepository` l'implémente pour lire/écrire les tâches dans le fichier JSON.
+- `lib/src/cli/` : `CliRunner`, qui lit les arguments tapés dans le terminal et appelle le bon truc.
 
-## Requirements
+## Installation
 
-- [Dart SDK](https://dart.dev/get-dart) `^3.12.2`
-
-## Getting started
-
-Install dependencies:
+Il faut le [Dart SDK](https://dart.dev/get-dart) (testé avec la version 3.12.2).
 
 ```bash
 dart pub get
 ```
 
-## Running the app
+## Lancer l'appli
 
 ```bash
-dart run bin/task_cli.dart add "Buy milk" --priority=high --due=2026-08-25
-dart run bin/task_cli.dart add "Fix production bug" --urgent="Site is down"
+dart run bin/task_cli.dart add "Acheter du lait" --priority=high --due=2026-08-25
+dart run bin/task_cli.dart add "Corriger le bug en prod" --urgent="Le site est down"
 dart run bin/task_cli.dart list --sort=priority
 dart run bin/task_cli.dart complete <id>
 dart run bin/task_cli.dart delete <id>
 dart run bin/task_cli.dart help
 ```
 
-Tasks are stored in a `tasks.json` file created next to where the command is
-run.
+Le fichier `tasks.json` est créé automatiquement dans le dossier où on lance la commande.
 
-### Commands
+### Les commandes
 
-| Command | Description |
-| --- | --- |
-| `add <title> [--priority=low\|medium\|high] [--due=YYYY-MM-DD] [--urgent[=reason]]` | Add a task. `--urgent` creates an `UrgentTask` (always high priority). |
-| `list [--sort=priority\|date]` | List all tasks, optionally sorted. |
-| `complete <id>` | Mark a task as completed. |
-| `delete <id>` | Delete a task. |
+- `add <titre> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=raison]]` — ajoute une tâche. Avec `--urgent`, ça crée une `UrgentTask` (toujours priorité haute).
+- `list [--sort=priority|date]` — liste les tâches, avec tri optionnel.
+- `complete <id>` — marque une tâche comme terminée.
+- `delete <id>` — supprime une tâche.
 
-## Running the tests
+## Lancer les tests
 
 ```bash
 dart test
 ```
 
-The test suite covers task creation and validation, JSON round-tripping,
-inheritance behavior of `UrgentTask`, and every `TaskRepository` operation
-(add, get, update, delete, sorting) against a temporary JSON file.
+Les tests couvrent la création/validation des tâches, la conversion en JSON et retour, le comportement de `UrgentTask`, et toutes les opérations du `TaskRepository` (ajout, lecture, mise à jour, suppression, tri).

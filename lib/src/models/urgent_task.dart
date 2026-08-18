@@ -1,14 +1,9 @@
-// Priority is forced to `high` in the constructor below, which requires an
-// explicit `super(...)` call — that's incompatible with super parameters.
-// ignore_for_file: use_super_parameters
-
 import '../exceptions/task_exceptions.dart';
 import 'priority.dart';
 import 'task.dart';
 
-/// A task escalated to top priority, e.g. a production incident. Urgent
-/// tasks are always [Priority.high] and must carry a reason for the
-/// escalation.
+// Une tâche urgente : toujours priorité haute, et on doit préciser
+// pourquoi elle est urgente.
 class UrgentTask extends Task {
   final String escalationReason;
 
@@ -29,13 +24,10 @@ class UrgentTask extends Task {
        ) {
     if (escalationReason.trim().isEmpty) {
       throw InvalidTaskException(
-        'Escalation reason cannot be empty for an urgent task',
+        'Une tâche urgente doit avoir une raison (escalationReason)',
       );
     }
   }
-
-  @override
-  String get statusLabel => isCompleted ? 'done' : 'URGENT-pending';
 
   @override
   Map<String, dynamic> toJson() => {
@@ -61,5 +53,5 @@ class UrgentTask extends Task {
   );
 
   @override
-  String toString() => '${super.toString()} — escalated: $escalationReason';
+  String toString() => '${super.toString()} — urgent: $escalationReason';
 }

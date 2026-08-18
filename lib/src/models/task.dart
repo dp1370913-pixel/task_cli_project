@@ -1,13 +1,11 @@
-import 'dart:math';
-
 import '../exceptions/task_exceptions.dart';
 import '../interfaces/json_serializable.dart';
 import 'priority.dart';
 import 'standard_task.dart';
 import 'urgent_task.dart';
 
-/// Base type for every task. Concrete tasks are [StandardTask] and
-/// [UrgentTask].
+// Classe abstraite : on ne peut pas faire "Task(...)" directement,
+// il faut passer par une sous-classe (StandardTask ou UrgentTask).
 abstract class Task implements JsonSerializable, Comparable<Task> {
   final String id;
   String title;
@@ -23,46 +21,42 @@ abstract class Task implements JsonSerializable, Comparable<Task> {
     String? id,
     this.isCompleted = false,
     DateTime? createdAt,
-  }) : id = id ?? _generateId(),
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
        createdAt = createdAt ?? DateTime.now() {
     if (title.trim().isEmpty) {
-      throw InvalidTaskException('Task title cannot be empty');
+      throw InvalidTaskException('Le titre de la tâche ne peut pas être vide');
     }
   }
 
-  static String _generateId() {
-    final timestamp = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    final salt = Random().nextInt(46656).toRadixString(36).padLeft(3, '0');
-    return '$timestamp$salt';
+  void complete() {
+    isCompleted = true;
   }
 
-  void complete() => isCompleted = true;
-
-  String get statusLabel => isCompleted ? 'done' : 'pending';
-
-  bool get isOverdue =>
-      !isCompleted && dueDate != null && dueDate!.isBefore(DateTime.now());
-
-  /// Highest priority sorts first.
+  // Utilisé par List.sort() pour trier les tâches (interface Comparable).
+  // Priorité haute en premier.
   @override
   int compareTo(Task other) => other.priority.index.compareTo(priority.index);
 
   @override
   Map<String, dynamic> toJson();
 
+  // Reconstruit une StandardTask ou une UrgentTask selon le champ "type"
+  // du JSON.
   static Task fromJson(Map<String, dynamic> json) {
     final type = json['type'] as String? ?? 'standard';
-    return switch (type) {
-      'urgent' => UrgentTask.fromJson(json),
-      'standard' => StandardTask.fromJson(json),
-      _ => throw StorageException('Unknown task type: $type'),
-    };
+    if (type == 'urgent') {
+      return UrgentTask.fromJson(json);
+    } else if (type == 'standard') {
+      return StandardTask.fromJson(json);
+    } else {
+      throw StorageException('Type de tâche inconnu: $type');
+    }
   }
 
   @override
   String toString() {
     final due = dueDate != null
-        ? ' (due: ${dueDate!.toIso8601String().split('T').first})'
+        ? ' (avant le ${dueDate!.toIso8601String().split('T').first})'
         : '';
     final mark = isCompleted ? '[x]' : '[ ]';
     return '$mark $title — ${priority.name}$due';

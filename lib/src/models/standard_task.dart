@@ -1,7 +1,7 @@
 import 'priority.dart';
 import 'task.dart';
 
-/// A regular task with a user-chosen priority.
+// Une tâche "normale", avec la priorité choisie par l'utilisateur.
 class StandardTask extends Task {
   StandardTask({
     required super.title,

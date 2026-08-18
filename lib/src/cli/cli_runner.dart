@@ -6,13 +6,16 @@ import '../models/standard_task.dart';
 import '../models/urgent_task.dart';
 import '../repository/task_repository.dart';
 
+// Petite classe pour séparer les arguments "libres" (ex: le titre)
+// des options du style --priority=high.
 class _ParsedOptions {
   final List<String> positional;
   final Map<String, String> named;
   _ParsedOptions(this.positional, this.named);
 }
 
-/// Parses command-line arguments and dispatches them to the repository.
+// Lit les arguments passés en ligne de commande et appelle
+// la bonne méthode sur le repository.
 class CliRunner {
   final TaskRepository repository;
 
@@ -28,26 +31,23 @@ class CliRunner {
     final rest = args.skip(1).toList();
 
     try {
-      switch (command) {
-        case 'add':
-          _handleAdd(rest);
-        case 'list':
-          _handleList(rest);
-        case 'complete':
-          _handleComplete(rest);
-        case 'delete':
-          _handleDelete(rest);
-        case 'help':
-        case '--help':
-        case '-h':
-          _printUsage();
-        default:
-          stderr.writeln('Unknown command: $command');
-          _printUsage();
-          exitCode = 1;
+      if (command == 'add') {
+        _handleAdd(rest);
+      } else if (command == 'list') {
+        _handleList(rest);
+      } else if (command == 'complete') {
+        _handleComplete(rest);
+      } else if (command == 'delete') {
+        _handleDelete(rest);
+      } else if (command == 'help' || command == '--help' || command == '-h') {
+        _printUsage();
+      } else {
+        stderr.writeln('Commande inconnue: $command');
+        _printUsage();
+        exitCode = 1;
       }
     } on TaskException catch (e) {
-      stderr.writeln('Error: ${e.message}');
+      stderr.writeln('Erreur: ${e.message}');
       exitCode = 1;
     }
   }
@@ -55,7 +55,7 @@ class CliRunner {
   void _handleAdd(List<String> args) {
     if (args.isEmpty) {
       throw InvalidTaskException(
-        'Usage: add <title> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=reason]]',
+        'Usage: add <titre> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=raison]]',
       );
     }
 
@@ -69,7 +69,7 @@ class CliRunner {
         dueDate = DateTime.parse(dueStr);
       } on FormatException {
         throw InvalidTaskException(
-          'Invalid date format for --due: $dueStr (expected YYYY-MM-DD)',
+          'Date invalide pour --due: $dueStr (format attendu: YYYY-MM-DD)',
         );
       }
     }
@@ -77,14 +77,14 @@ class CliRunner {
     if (options.named.containsKey('urgent')) {
       final reason = options.named['urgent']!.isNotEmpty
           ? options.named['urgent']!
-          : 'Marked urgent by user';
+          : 'Marquée urgente par l\'utilisateur';
       final task = UrgentTask(
         title: title,
         escalationReason: reason,
         dueDate: dueDate,
       );
       repository.add(task);
-      print('Added urgent task "${task.title}" (id: ${task.id})');
+      print('Tâche urgente ajoutée: "${task.title}" (id: ${task.id})');
     } else {
       final priority = priorityFromString(
         options.named['priority'] ?? 'medium',
@@ -95,7 +95,7 @@ class CliRunner {
         dueDate: dueDate,
       );
       repository.add(task);
-      print('Added task "${task.title}" (id: ${task.id})');
+      print('Tâche ajoutée: "${task.title}" (id: ${task.id})');
     }
   }
 
@@ -103,14 +103,15 @@ class CliRunner {
     final options = _parseOptions(args);
     final sortBy = options.named['sort'];
 
-    final tasks = switch (sortBy) {
-      'priority' => repository.sortedByPriority(),
-      'date' => repository.sortedByDueDate(),
-      _ => repository.getAll(),
-    };
+    var tasks = repository.getAll();
+    if (sortBy == 'priority') {
+      tasks = repository.sortedByPriority();
+    } else if (sortBy == 'date') {
+      tasks = repository.sortedByDueDate();
+    }
 
     if (tasks.isEmpty) {
-      print('No tasks yet.');
+      print('Aucune tâche pour le moment.');
       return;
     }
 
@@ -124,14 +125,14 @@ class CliRunner {
     final task = repository.getById(args.first);
     task.complete();
     repository.update(task);
-    print('Marked "${task.title}" as completed.');
+    print('Tâche "${task.title}" marquée comme terminée.');
   }
 
   void _handleDelete(List<String> args) {
     if (args.isEmpty) throw InvalidTaskException('Usage: delete <id>');
     final task = repository.getById(args.first);
     repository.delete(task.id);
-    print('Deleted "${task.title}".');
+    print('Tâche "${task.title}" supprimée.');
   }
 
   _ParsedOptions _parseOptions(List<String> args) {
@@ -155,10 +156,10 @@ class CliRunner {
 
   void _printUsage() {
     print('''
-Task CLI — a simple task manager
+Task CLI — gestionnaire de tâches en ligne de commande
 
-Usage:
-  dart run bin/task_cli.dart add <title> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=reason]]
+Utilisation:
+  dart run bin/task_cli.dart add <titre> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=raison]]
   dart run bin/task_cli.dart list [--sort=priority|date]
   dart run bin/task_cli.dart complete <id>
   dart run bin/task_cli.dart delete <id>

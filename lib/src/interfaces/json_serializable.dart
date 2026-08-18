@@ -1,4 +1,4 @@
-/// Interface implemented by every model that can be persisted as JSON.
-abstract interface class JsonSerializable {
+// Interface : toute classe qui l'implémente doit fournir toJson().
+abstract class JsonSerializable {
   Map<String, dynamic> toJson();
 }
