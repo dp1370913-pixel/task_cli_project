@@ -2,26 +2,17 @@ import '../exceptions/task_exceptions.dart';
 import 'priority.dart';
 import 'task.dart';
 
-// Une tâche urgente : toujours priorité haute, et on doit préciser
-// pourquoi elle est urgente.
 class UrgentTask extends Task {
   final String escalationReason;
 
   UrgentTask({
-    required String title,
+    required super.title,
     required this.escalationReason,
-    DateTime? dueDate,
-    String? id,
-    bool isCompleted = false,
-    DateTime? createdAt,
-  }) : super(
-         title: title,
-         priority: Priority.high,
-         dueDate: dueDate,
-         id: id,
-         isCompleted: isCompleted,
-         createdAt: createdAt,
-       ) {
+    super.dueDate,
+    super.id,
+    super.isCompleted = false,
+    super.createdAt,
+  }) : super(priority: Priority.high) {
     if (escalationReason.trim().isEmpty) {
       throw InvalidTaskException(
         'Une tâche urgente doit avoir une raison (escalationReason)',
