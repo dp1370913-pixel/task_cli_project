@@ -6,30 +6,36 @@ import '../models/task.dart';
 import 'repository.dart';
 
 // Implémentation de Repository<Task> qui sauvegarde les tâches
-// dans un fichier JSON local.
+// dans un fichier JSON local. La lecture/écriture se fait de façon
+// asynchrone (dart:io File.readAsString/writeAsString) pour ne pas
+// bloquer l'exécution pendant les I/O disque.
 class TaskRepository implements Repository<Task> {
   final File _file;
-  List<Task> _tasks = [];
+  final List<Task> _tasks;
 
-  TaskRepository(String path) : _file = File(path) {
-    _load();
+  TaskRepository._(this._file, this._tasks);
+
+  // Factory asynchrone : on ne peut pas faire d'`await` dans un
+  // constructeur classique, donc le chargement initial passe par ici.
+  static Future<TaskRepository> create(String path) async {
+    final file = File(path);
+    final tasks = await _loadFrom(file);
+    return TaskRepository._(file, tasks);
   }
 
-  void _load() {
-    if (!_file.existsSync()) {
-      _tasks = [];
-      return;
+  static Future<List<Task>> _loadFrom(File file) async {
+    if (!await file.exists()) {
+      return [];
     }
 
-    final content = _file.readAsStringSync();
+    final content = await file.readAsString();
     if (content.trim().isEmpty) {
-      _tasks = [];
-      return;
+      return [];
     }
 
     try {
       final decoded = jsonDecode(content) as List<dynamic>;
-      _tasks = decoded
+      return decoded
           .map((e) => Task.fromJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
@@ -37,29 +43,31 @@ class TaskRepository implements Repository<Task> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     try {
       final data = _tasks.map((t) => t.toJson()).toList();
-      if (!_file.parent.existsSync()) {
-        _file.parent.createSync(recursive: true);
+      if (!await _file.parent.exists()) {
+        await _file.parent.create(recursive: true);
       }
-      _file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(data));
+      await _file.writeAsString(
+        const JsonEncoder.withIndent('  ').convert(data),
+      );
     } catch (e) {
       throw StorageException('Impossible d\'écrire dans tasks.json: $e');
     }
   }
 
   @override
-  void add(Task item) {
+  Future<void> add(Task item) async {
     _tasks.add(item);
-    _save();
+    await _save();
   }
 
   @override
-  List<Task> getAll() => List<Task>.from(_tasks);
+  Future<List<Task>> getAll() async => List<Task>.from(_tasks);
 
   @override
-  Task getById(String id) {
+  Future<Task> getById(String id) async {
     for (final task in _tasks) {
       if (task.id == id) return task;
     }
@@ -67,28 +75,28 @@ class TaskRepository implements Repository<Task> {
   }
 
   @override
-  void update(Task item) {
+  Future<void> update(Task item) async {
     final index = _tasks.indexWhere((t) => t.id == item.id);
     if (index == -1) throw TaskNotFoundException(item.id);
     _tasks[index] = item;
-    _save();
+    await _save();
   }
 
   @override
-  void delete(String id) {
+  Future<void> delete(String id) async {
     final index = _tasks.indexWhere((t) => t.id == id);
     if (index == -1) throw TaskNotFoundException(id);
     _tasks.removeAt(index);
-    _save();
+    await _save();
   }
 
-  List<Task> sortedByPriority() {
+  Future<List<Task>> sortedByPriority() async {
     final copy = List<Task>.from(_tasks);
     copy.sort();
     return copy;
   }
 
-  List<Task> sortedByDueDate() {
+  Future<List<Task>> sortedByDueDate() async {
     final copy = List<Task>.from(_tasks);
     copy.sort((a, b) {
       if (a.dueDate == null && b.dueDate == null) return 0;

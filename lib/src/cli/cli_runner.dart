@@ -15,13 +15,14 @@ class _ParsedOptions {
 }
 
 // Lit les arguments passés en ligne de commande et appelle
-// la bonne méthode sur le repository.
+// la bonne méthode sur le repository. Toute la chaîne est asynchrone
+// puisque le repository fait des I/O disque non bloquantes.
 class CliRunner {
   final TaskRepository repository;
 
   CliRunner(this.repository);
 
-  void run(List<String> args) {
+  Future<void> run(List<String> args) async {
     if (args.isEmpty) {
       _printUsage();
       return;
@@ -32,13 +33,13 @@ class CliRunner {
 
     try {
       if (command == 'add') {
-        _handleAdd(rest);
+        await _handleAdd(rest);
       } else if (command == 'list') {
-        _handleList(rest);
+        await _handleList(rest);
       } else if (command == 'complete') {
-        _handleComplete(rest);
+        await _handleComplete(rest);
       } else if (command == 'delete') {
-        _handleDelete(rest);
+        await _handleDelete(rest);
       } else if (command == 'help' || command == '--help' || command == '-h') {
         _printUsage();
       } else {
@@ -52,7 +53,7 @@ class CliRunner {
     }
   }
 
-  void _handleAdd(List<String> args) {
+  Future<void> _handleAdd(List<String> args) async {
     if (args.isEmpty) {
       throw InvalidTaskException(
         'Usage: add <titre> [--priority=low|medium|high] [--due=YYYY-MM-DD] [--urgent[=raison]]',
@@ -83,7 +84,7 @@ class CliRunner {
         escalationReason: reason,
         dueDate: dueDate,
       );
-      repository.add(task);
+      await repository.add(task);
       print('Tâche urgente ajoutée: "${task.title}" (id: ${task.id})');
     } else {
       final priority = priorityFromString(
@@ -94,20 +95,20 @@ class CliRunner {
         priority: priority,
         dueDate: dueDate,
       );
-      repository.add(task);
+      await repository.add(task);
       print('Tâche ajoutée: "${task.title}" (id: ${task.id})');
     }
   }
 
-  void _handleList(List<String> args) {
+  Future<void> _handleList(List<String> args) async {
     final options = _parseOptions(args);
     final sortBy = options.named['sort'];
 
-    var tasks = repository.getAll();
+    var tasks = await repository.getAll();
     if (sortBy == 'priority') {
-      tasks = repository.sortedByPriority();
+      tasks = await repository.sortedByPriority();
     } else if (sortBy == 'date') {
-      tasks = repository.sortedByDueDate();
+      tasks = await repository.sortedByDueDate();
     }
 
     if (tasks.isEmpty) {
@@ -120,18 +121,18 @@ class CliRunner {
     }
   }
 
-  void _handleComplete(List<String> args) {
+  Future<void> _handleComplete(List<String> args) async {
     if (args.isEmpty) throw InvalidTaskException('Usage: complete <id>');
-    final task = repository.getById(args.first);
+    final task = await repository.getById(args.first);
     task.complete();
-    repository.update(task);
+    await repository.update(task);
     print('Tâche "${task.title}" marquée comme terminée.');
   }
 
-  void _handleDelete(List<String> args) {
+  Future<void> _handleDelete(List<String> args) async {
     if (args.isEmpty) throw InvalidTaskException('Usage: delete <id>');
-    final task = repository.getById(args.first);
-    repository.delete(task.id);
+    final task = await repository.getById(args.first);
+    await repository.delete(task.id);
     print('Tâche "${task.title}" supprimée.');
   }
 
